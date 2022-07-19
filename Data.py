@@ -13,7 +13,6 @@ band_list = ['u','g','r','i','z','y']
 def make_AGN_model(t, tau, amp):
     DRW_kernel = DRW_term(amp, tau)
     t, y, yerr = gpSimByTime(DRW_kernel, 1000, t-np.min(t), factor=10, nLC=1, log_flux=True)
-    print(len(t), t)
     return y + 22., yerr
 
 def convert(s):
@@ -76,12 +75,14 @@ for x in range(120):
         for j, myband in enumerate(band_list):
             lsst_mags = np.zeros(len(new_db))
             gind2 = np.where(new_db['filter'] == myband)
-            new_model_mags, yerr = make_AGN_model(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values, tau, amp)
-            lsst_mags[gind2] = new_model_mags
-            #best_fit = drw_fit(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values, lsst_mags[gind2], yerr)
-            #best_psd = gp_psd(DRW_term(*np.log(best_fit)))
-            #DRW_kernel = DRW_term(amp, tau)
-            #true_psd = gp_psd(DRW_kernel)
+            if len(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values) > 1:
+                new_model_mags, yerr = make_AGN_model(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values, tau, amp)
+                lsst_mags[gind2] = new_model_mags
+                if (len(lsst_mags[gind2]) > 1 & len(yerr) > 1):
+                    best_fit = drw_fit(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values, lsst_mags[gind2], yerr)
+                    best_psd = gp_psd(DRW_term(*np.log(best_fit)))
+                    DRW_kernel = DRW_term(amp, tau)
+                    true_psd = gp_psd(DRW_kernel)
 
         # now lets add noise to the LC...this involves eqns..
         g = 2.2
@@ -107,5 +108,5 @@ for x in range(120):
 
     color_dict = {'u': 'purple', 'g': 'green', 'r': 'red', 'i': 'goldenrod', 'z': 'black', 'y': 'yellow'}
     n = str(x)
-    #print(len(t), len(mag), tau, amp)
-    #np.savez('AGN'+n+'.npz', t=t, mag=mag, tau=tau, amp=amp, filter=filter)
+    print(n)
+    np.savez('AGN'+n+'.npz', t=t, mag=mag, tau=tau, amp=amp, filter=filter)
