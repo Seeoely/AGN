@@ -55,6 +55,7 @@ def inject_agn():
     if len(new_db) == 0:
         print('LSST was not looking here...')
         sys.exit()
+    fig, ax = plt.subplots(1, 1, dpi=150, figsize=(6, 3))
     for j, myband in enumerate(band_list):
         lsst_mags = np.zeros(len(new_db))
         gind2 = np.where(new_db['filter'] == myband)
@@ -64,11 +65,10 @@ def inject_agn():
         best_psd = gp_psd(DRW_term(*np.log(best_fit)))
         DRW_kernel = DRW_term(np.log(0.1), np.log(100))
         true_psd = gp_psd(DRW_kernel)
-        fig, ax = plt.subplots(1, 1, dpi=150, figsize=(6, 3))
         freq = np.logspace(-5, 2)
-        ax.plot(freq, true_psd(freq), label='Input PSD')
-        ax.plot(freq, best_psd(freq), label='Best-fit PSD')
+        ax.plot(freq, best_psd(freq), label = myband)
         plt.xscale('log')
+    ax.plot(freq, true_psd(freq), label='Input PSD')
     # now lets add noise to the LC...this involves eqns..
     g = 2.2
     h = 6.626e-27
@@ -90,5 +90,9 @@ def inject_agn():
 t, m, err, filters = inject_agn()
 
 color_dict = {'u': 'purple', 'g': 'green', 'r': 'red', 'i': 'goldenrod', 'z': 'black', 'y': 'yellow'}
-#plt.show()
-np.savez('XMM-LSS.npz', t=t, m=m, err=err, color=color_dict)
+plt.xlabel('Frequency [1/Day]')
+plt.ylabel('PSD')
+plt.legend()
+plt.tight_layout()
+plt.show()
+#np.savez('XMM-LSS.npz', t=t, m=m, err=err, color=color_dict)

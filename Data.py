@@ -6,7 +6,7 @@ import pandas as pd
 import sqlite3
 from scipy import interpolate
 from eztao.carma import DRW_term
-from eztao.ts import gpSimRand, gpSimByTime
+from eztao.ts import gpSimByTime
 
 band_list = ['u','g','r','i','z','y']
 
@@ -105,6 +105,7 @@ for x in range(120):
 
         return new_db['observationStartMJD'].values, mag, new_db['filter'].values
     t, mag, filters= inject_agn()
+
 
     color_dict = {'u': 'purple', 'g': 'green', 'r': 'red', 'i': 'goldenrod', 'z': 'black', 'y': 'yellow'}
     n = str(x)

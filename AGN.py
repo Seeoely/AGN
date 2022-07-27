@@ -2,15 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sqlite3
-import sqlalchemy
-import random
-import json
 from scipy import interpolate
-from astropy.coordinates import SkyCoord
-from scipy.integrate import simps
-from astropy.cosmology import WMAP9 as cosmo
 from eztao.carma import DRW_term
-from eztao.ts import gpSimRand, gpSimByTime
+from eztao.ts import gpSimByTime
 band_list = ['u','g','r','i','z','y']
 
 # This needs to be replaced with a realistic AGN model
@@ -94,6 +88,6 @@ for filt in np.unique(filters):
 #np.savez('test.npz', t=t, m=m, err=err, color=color_dict)
 plt.legend()
 plt.xlabel('MJD')
-plt.ylabel('Flux [Arbitrary Units]')
+plt.ylabel('Magnitude')
 plt.show()
 #plt.clf()

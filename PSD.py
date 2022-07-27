@@ -4,15 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import sqlite3
-import sqlalchemy
-import random
-import json
 from scipy import interpolate
-from astropy.coordinates import SkyCoord
-from scipy.integrate import simps
-from astropy.cosmology import WMAP9 as cosmo
 from eztao.carma import DRW_term
-from eztao.ts import gpSimRand, gpSimByTime
+from eztao.ts import gpSimByTime
 band_list = ['u','g','r','i','z','y']
 
 def make_AGN_model(t, tau, amp):
@@ -69,7 +63,7 @@ def inject_agn():
         print('LSST was not looking here...')
         sys.exit()
 
-
+    fig, ax = plt.subplots(1, 1, dpi=150, figsize=(6, 3))
 
     for j, myband in enumerate(band_list):
         lsst_mags = np.zeros(len(new_db))
@@ -80,14 +74,11 @@ def inject_agn():
         best_psd = gp_psd(DRW_term(*np.log(best_fit)))
         DRW_kernel = DRW_term(np.log(0.1), np.log(100))
         true_psd = gp_psd(DRW_kernel)
-        fig, ax = plt.subplots(1, 1, dpi=150, figsize=(6, 3))
         freq = np.logspace(-5, 2)
-        ax.plot(freq, true_psd(freq), label='Input PSD')
-        ax.plot(freq, best_psd(freq), label='Best-fit PSD')
+        ax.plot(freq, best_psd(freq), label= myband)
         plt.xscale('log')
 
-
-
+    ax.plot(freq, true_psd(freq), label='Input PSD')
     # now lets add noise to the LC...this involves eqns..
     g = 2.2
     h = 6.626e-27
@@ -112,6 +103,8 @@ t, m, err, filters = inject_agn()
 color_dict = {'u': 'purple', 'g': 'green', 'r': 'red', 'i': 'goldenrod', 'z': 'black', 'y': 'yellow'}
 plt.xlabel('Frequency [1/Day]')
 plt.ylabel('PSD')
+plt.legend()
+plt.tight_layout()
 plt.show()
 
 
