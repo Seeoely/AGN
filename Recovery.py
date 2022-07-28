@@ -8,6 +8,7 @@ from scipy import interpolate
 from eztao.carma import DRW_term
 from eztao.ts import gpSimByTime
 from eztao.ts import drw_fit
+from functools import partial
 
 band_list = ['u', 'g', 'r', 'i', 'z', 'y']
 
@@ -25,12 +26,14 @@ def convert(s):
 	num = float(new)
 	return num
 
+def bleh():
+	return 2.0, 0.1
 
 # This just defined the different wavelengths which LSST observes at
 band_wvs = 1. / (0.0001 * np.asarray([3751.36, 4741.64, 6173.23, 7501.62, 8679.19, 9711.53]))
 
-Tresiduals = np.empty(10)
-Aresiduals = np.empty(10)
+Tresiduals = []
+Aresiduals = []
 
 for x in range(10):
 	with open("/Users/colevogt/Downloads/PennSROP/AGN.txt", 'r') as file:
@@ -79,22 +82,16 @@ for x in range(10):
 		# See if LSST is pointing at this location:
 		new_db = df.where((np.abs(df['fieldRA'] - ra) < 1.75) & \
 						  (np.abs(df['fieldDec'] - dec) < 1.75)).dropna()
+		lsst_mags = np.zeros(len(new_db))
 		if len(new_db) == 0:
 			print('LSST was not looking here...')
 			sys.exit()
 		for j, myband in enumerate(band_list):
-			lsst_mags = np.zeros(len(new_db))
 			gind2 = np.where(new_db['filter'] == myband)
 			if len(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values) > 1:
 				new_model_mags, yerr = make_AGN_model(
 					new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values, tau, amp)
 				lsst_mags[gind2] = new_model_mags
-				if (len(lsst_mags[gind2]) > 1 & len(yerr) > 1):
-					best_fit = drw_fit(new_db['observationStartMJD'].where(new_db['filter'] == myband).dropna().values,
-									   lsst_mags[gind2], yerr)
-					best_psd = gp_psd(DRW_term(*np.log(best_fit)))
-					DRW_kernel = DRW_term(amp, tau)
-					true_psd = gp_psd(DRW_kernel)
 
 		# now lets add noise to the LC...this involves eqns..
 		g = 2.2
@@ -121,13 +118,18 @@ for x in range(10):
 		return new_db['observationStartMJD'].values, mag, new_db['filter'].values, err
 
 	t, mag, filters, err = inject_agn()
-	best_fit = drw_fit(t - np.min(t), mag, err)
+	std = np.std(mag)
+	bounds = [
+		(np.log(std / 50), np.log(3 * std)),
+		(0.5,4)]
+	best_fit = np.log10(drw_fit(t - np.min(t), mag - np.mean(mag), err, init_func=bleh, user_bounds= bounds))
 	#print(f'Best-fit DRW parameters: {best_fit}')
-	np.append(Tresiduals, tau - best_fit[1])
-	np.append(Aresiduals, amp - best_fit[0])
-print(Tresiduals)
-plt.hist(Tresiduals, 100)
-plt.show()
-#plt.hist(Aresiduals)
+	#Tresiduals = np.append(Tresiduals, tau - best_fit[1])
+	#Aresiduals = np.append(Aresiduals, amp - best_fit[0])
+	print(tau, best_fit[1], amp, best_fit[0])
+#print(Tresiduals, Aresiduals)
+#plt.hist(Tresiduals, 100)
+#plt.show()
+#plt.hist(Aresiduals, 100)
 #plt.show()
 #np.savez('AGNParam.npz', Tresiduals, Aresiduals)
